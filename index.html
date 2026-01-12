@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSV to DOCX Converter</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="https://unpkg.com/pizzip@3.1.5/dist/pizzip.js"></script>
+    <script src="https://unpkg.com/docxtemplater@3.42.2/build/docxtemplater.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+    <div class="bg-white p-8 rounded-lg shadow-lg max-w-md w-full">
+        <h1 class="text-2xl font-bold text-gray-800 mb-4 text-center">CSV to DOCX Converter</h1>
+        <p class="text-gray-600 mb-6 text-center">Upload a CSV file to generate a single DOCX or a ZIP of multiple DOCX files. Blank or unnecessary fields are omitted.</p>
+        <div class="mb-4">
+            <input type="file" id="csvFile" accept=".csv" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+        </div>
+        <button onclick="processFile()" class="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 transition duration-200">Process</button>
+    </div>
+
+    <script>
+        function processFile() {
+            const file = document.getElementById('csvFile').files[0];
+            if (!file) {
+                alert('Please select a CSV file.');
+                return;
+            }
+
+            Papa.parse(file, {
+                header: false,
+                skipEmptyLines: true,
+                complete: function(results) {
+                    const allRows = results.data;
+                    const rows = allRows.slice(1); // Skip header row
+                    if (rows.length === 0) {
+                        alert('No data rows in CSV.');
+                        return;
+                    }
+
+                    fetch('template.docx')
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error('template.docx not found. Ensure it is in the same directory or hosted correctly.');
+                            }
+                            return response.arrayBuffer();
+                        })
+                        .then(templateContent => {
+                            if (rows.length === 1) {
+                                const data = processRow(rows[0]);
+                                const filename = (data.descriptive_title.trim().replace(/[^a-z0-9]/gi, '_') || 'output') + '.docx';
+                                generateDocx(templateContent, data, filename);
+                            } else {
+                                const zip = new JSZip();
+                                rows.forEach((row, index) => {
+                                    const data = processRow(row);
+                                    const docContent = generateDocxContent(templateContent, data);
+                                    const filename = (data.descriptive_title.trim().replace(/[^a-z0-9]/gi, '_') || `output_${index + 1}`) + '.docx';
+                                    zip.file(filename, docContent);
+                                });
+                                zip.generateAsync({type: 'blob'}).then(blob => {
+                                    saveAs(blob, 'outputs.zip');
+                                });
+                            }
+                        })
+                        .catch(error => {
+                            alert('Error loading template: ' + error.message);
+                        });
+                }
+            });
+        }
+
+        function processRow(row) {
+            const data = {
+                descriptive_title: row[0] || '',
+                corresponding_contributor: row[1] || '',
+                other_contributors: row[3] || '',
+                contributor_form_url: row[8] || '',
+                summary: row[9] || '',
+                unusual_features: row[10] || '',
+                differ_from_present: row[11] || '',
+                problems_solved: row[12] || '',
+                advantages: row[13] || '',
+                ip_types_selected: row[14] || '',
+                ip_types_other: row[15] || '', 
+                attach_pages_url: row[20] || '',
+                material_incorporated: row[21] || '',
+                what_material: row[22] || '',
+                source_selected: row[23] || '',
+                source_ut_lab: row[24] || '',
+                source_company: row[25] || '',
+                source_other_institution: row[26] || '',
+                source_other: row[27] || '',
+                material_covered_by_agreement: row[28] || '',
+                agreement_copy_url: row[33] || '',
+                potential_uses_selected: row[34] || '',
+                potential_uses_other: row[35] || '',
+                affects_diseases: row[36] || '',
+                list_indication: row[37] || '',
+                companies_interested: row[38] || '',
+                worked_with_companies: row[39] || '',
+                list_companies: row[40] || '',
+                has_publications: row[41] || '',
+                aided_by_grant: row[93] || '',
+                pending_grant: row[94] || '',
+                encumbered: row[95] || '',
+                disclosures: [],
+                sponsors: []
+            };
+
+            const discStarts = [42, 55, 68, 81];
+            discStarts.forEach(start => {
+                const disc = {
+                    title: row[start] || '',
+                    authors: row[start + 1] || '',
+                    type_selected: row[start + 2] || '',
+                    type_other: row[start + 3] || '',
+                    written_selected: row[start + 4] || '',
+                    written_other: row[start + 5] || '',
+                    publication_date: row[start + 6] || '',
+                    location: row[start + 7] || '',
+                    category_selected: row[start + 8] || '',
+                    category_other: row[start + 9] || '',
+                    conf_type_selected: row[start + 10] || '',
+                    conf_type_other: row[start + 11] || ''
+                };
+                if (disc.title.trim() !== '') {
+                    data.disclosures.push(disc);
+                }
+            });
+
+            const sponsorStarts = [96, 104];
+            sponsorStarts.forEach(start => {
+                const sponsor = {
+                    entity_name: row[start] || '',
+                    type: row[start + 1] || '',
+                    project_title: row[start + 2] || '',
+                    purpose: row[start + 3] || '',
+                    acct: row[start + 4] || '',
+                    grant_contract: row[start + 5] || '',
+                    darpa_name: row[start + 6] || ''
+                };
+                if (sponsor.entity_name.trim() !== '') {
+                    data.sponsors.push(sponsor);
+                }
+            });
+
+            return data;
+        }
+
+        function generateDocx(templateContent, data, filename) {
+            const zip = new PizZip(templateContent);
+            const doc = new docxtemplater(zip, {
+                paragraphLoop: true,
+                linebreaks: true
+            });
+            doc.render(data);
+            const out = doc.getZip().generate({
+                type: 'blob',
+                mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+            });
+            saveAs(out, filename);
+        }
+
+        function generateDocxContent(templateContent, data) {
+            const zip = new PizZip(templateContent);
+            const doc = new docxtemplater(zip, {
+                paragraphLoop: true,
+                linebreaks: true
+            });
+            doc.render(data);
+            return doc.getZip().generate({ type: 'arraybuffer' });
+        }
+    </script>
+</body>
+</html>
