@@ -18,12 +18,20 @@ const status = document.getElementById("status");
 fileInput.addEventListener("change", e => {
   parseCSV(e.target.files[0], data => {
     rows = data;
-    headers = Object.keys(rows[0] || {});
+    if (!rows || rows.length === 0) {
+  alert("CSV appears to be empty or invalid.");
+  return;
+}
+
+headers = Object.keys(rows[0]).filter(h => h.trim() !== "");
+``
     init();
   });
 });
 
 function init() {
+  console.log("Initializing UI");
+
   mapping = loadMapping();
 
   if (!Object.keys(mapping).length) {
@@ -75,16 +83,29 @@ function renderMappingUI() {
   });
 }
 
-generateBtn.addEventListener("click", () => {
-  status.innerText = "Processing...";
-  generateBtn.disabled = true;
+generateBtn.addEventListener("click", async () => {
+  try {
+    status.innerText = "Processing...";
+    generateBtn.disabled = true;
 
-  fetch("./template.docx")
-    .then(r => r.arrayBuffer())
-    .then(template => generateDocuments(template, rows, mapping))
-    .then(blob => {
-      saveAs(blob, "outputs.zip");
-      status.innerText = "Done!";
-      generateBtn.disabled = false;
-    });
+    const res = await fetch("./template.docx");
+
+    if (!res.ok) {
+      throw new Error("template.docx not found");
+    }
+
+    const template = await res.arrayBuffer();
+
+    const blob = await generateDocuments(template, rows, mapping);
+
+    saveAs(blob, "outputs.zip");
+
+    status.innerText = "Done!";
+  } catch (err) {
+    console.error(err);
+    alert("Error: " + err.message);
+    status.innerText = "Error occurred";
+  } finally {
+    generateBtn.disabled = false;
+  }
 });
