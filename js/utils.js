@@ -6,7 +6,7 @@ export function safeText(val) {
   // Normalize for comparison
   const normalized = cleaned.toLowerCase();
 
-  // ❌ Known "junk" / label-only values → treat as empty
+  // Known "junk" / label-only values → treat as empty
   const INVALID_VALUES = [
     "descriptive title of invention:",
     "corresponding contributor:",
