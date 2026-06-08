@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
+<meta charset="UTF-8"> 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CSV to DOCX Converter</title>
 
@@ -11,36 +11,26 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 <script src="https://cdn.tailwindcss.com"></script>
-
 </head>
 
 <body class="bg-gray-100 min-h-screen flex flex-col items-center p-6">
-
 <div class="bg-white p-6 rounded shadow max-w-4xl w-full">
-
 <h1 class="text-xl font-bold mb-4">IP Disclosure Converter</h1>
 
 <input type="file" id="csvFile" accept=".csv" class="mb-4">
 
 <div id="preview" class="overflow-auto mb-4"></div>
-
 <div id="mappingContainer" class="mb-4"></div>
 
-<button onclick="processFile()" class="bg-blue-500 text-white px-4 py-2 rounded">
-Generate DOCX
-</button>
-
+<button onclick="processFile()" class="bg-blue-500 text-white px-4 py-2 rounded">Generate DOCX</button>
 <div id="status" class="mt-3 text-sm text-gray-600"></div>
-
 </div>
 
 <script>
-
 let parsedData = [];
 let headers = [];
 let fieldMap = {};
 
-// Template fields (must match DOCX)
 const TEMPLATE_FIELDS = [
   "descriptive_title",
   "corresponding_contributor",
@@ -63,7 +53,7 @@ function handleFile(e) {
     skipEmptyLines: true,
     complete: function(results) {
       parsedData = results.data;
-      headers = Object.keys(parsedData[0]);
+      headers = Object.keys(parsedData[0] || {});
 
       renderPreview();
       renderMappingUI();
@@ -95,7 +85,6 @@ function renderPreview() {
 
 function renderMappingUI() {
   const container = document.getElementById('mappingContainer');
-
   let html = "<h3 class='font-semibold mb-2'>Field Mapping</h3>";
 
   TEMPLATE_FIELDS.forEach(field => {
@@ -115,59 +104,49 @@ function renderMappingUI() {
 
 function buildMapping() {
   fieldMap = {};
-  document.querySelectorAll("select").forEach(select => {
-    const field = select.dataset.field;
-    fieldMap[field] = select.value;
+  document.querySelectorAll('select').forEach(select => {
+    fieldMap[select.dataset.field] = select.value;
   });
 }
 
 function processFile() {
   buildMapping();
-
   document.getElementById("status").innerText = "Processing...";
 
   fetch('./template.docx')
     .then(res => res.arrayBuffer())
     .then(templateContent => {
-
       const zip = new JSZip();
 
       parsedData.forEach((row, index) => {
         const data = processRow(row);
 
         try {
-          const docBlob = generateDoc(templateContent, data);
-          const name = (data.descriptive_title || `file_${index}`).replace(/[^a-z0-9]/gi, "_");
-
-          zip.file(name + ".docx", docBlob);
+          const blob = generateDoc(templateContent, data);
+          const name = (data.descriptive_title || `file_${index}`).replace(/[^a-z0-9]/gi, '_');
+          zip.file(name + '.docx', blob);
         } catch (err) {
           console.error(err);
         }
       });
 
-      zip.generateAsync({ type: "blob" }).then(blob => {
-        saveAs(blob, "outputs.zip");
+      zip.generateAsync({ type: 'blob' }).then(blob => {
+        saveAs(blob, 'outputs.zip');
         document.getElementById("status").innerText = "Done!";
       });
     })
-    .catch(err => {
-      alert("Template not found.");
-      console.error(err);
-    });
+    .catch(() => alert("Template not found"));
 }
 
 function processRow(row) {
   const data = {};
 
   Object.keys(fieldMap).forEach(key => {
-    const csvField = fieldMap[key];
-    data[key] = csvField ? (row[csvField] || "").trim() : "";
+    const col = fieldMap[key];
+    data[key] = col ? (row[col] || '').trim() : '';
   });
 
-  // Example dynamic disclosures
   data.disclosures = extractRepeating(row, "Disclosure");
-
-  // Example sponsors
   data.sponsors = extractRepeating(row, "Sponsor");
 
   return data;
@@ -190,20 +169,15 @@ function extractRepeating(row, prefix) {
 
 function generateDoc(templateContent, data) {
   const zip = new PizZip(templateContent);
-  const doc = new docxtemplater(zip, {
-    paragraphLoop: true,
-    linebreaks: true
-  });
+  const doc = new docxtemplater(zip, { paragraphLoop: true, linebreaks: true });
 
   doc.render(data);
 
   return doc.getZip().generate({
-    type: "blob",
-    mimeType:
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    type: 'blob',
+    mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
   });
 }
-
 </script>
 </body>
 </html>
