@@ -1,3 +1,6 @@
+console.log("App loaded successfully");
+``
+
 import { parseCSV } from './parser.js';
 import { autoMap, saveMapping, loadMapping, TEMPLATE_FIELDS } from './mapper.js';
 import { generateDocuments } from './docgen.js';
