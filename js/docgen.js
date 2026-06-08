@@ -25,11 +25,31 @@ export function generateDocuments(templateContent, rows, mapping) {
 }
 
 function buildData(row, mapping) {
-  const obj = {};
+const obj = {};
 
-  Object.keys(mapping).forEach(key => {
-    obj[key] = safeText(row[mapping[key]]);
-  });
+Object.keys(mapping).forEach(key => {
+  obj[key] = safeText(row[mapping[key]]);
+});
 
-  return obj;
+// Add repeating groups
+obj.disclosures = extractRepeating(row, "Disclosure");
+obj.sponsors = extractRepeating(row, "Sponsor");
+
+return obj;
+}
+
+// Add helper funcion
+function extractRepeating(row, prefix) {
+  const results = [];
+  let i = 1;
+
+  while (row[`${prefix} ${i} Title`]) {
+    results.push({
+      title: safeText(row[`${prefix} ${i} Title`]),
+      authors: safeText(row[`${prefix} ${i} Authors`])
+    });
+    i++;
+  }
+
+  return results;
 }
