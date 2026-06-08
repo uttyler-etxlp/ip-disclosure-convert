@@ -1,10 +1,13 @@
-# CSV to DOCX Converter
+# IP Disclosure CSV → DOCX Converter
 
-## Usage
-1. Upload CSV
-2. Map fields
-3. Generate documents
+## Features
+- Auto-mapping CSV fields
+- Editable mapping UI
+- Persistent mapping (localStorage)
+- Secure client-side processing
+- Batch document export
 
-## Deploy to GitHub Pages
-- Place index.html + template.docx at repo root
-- Enable Pages
+## Setup
+1. Add your template.docx to root
+2. Upload to GitHub
+3. Enable Pages

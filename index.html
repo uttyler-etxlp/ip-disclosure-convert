@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"> 
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CSV to DOCX Converter</title>
+<title>IP Disclosure Converter</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <script src="https://unpkg.com/pizzip@3.1.5/dist/pizzip.js"></script>
@@ -13,171 +13,37 @@
 <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
-<body class="bg-gray-100 min-h-screen flex flex-col items-center p-6">
-<div class="bg-white p-6 rounded shadow max-w-4xl w-full">
-<h1 class="text-xl font-bold mb-4">IP Disclosure Converter</h1>
+<body class="bg-gray-100 flex justify-center p-6">
 
-<input type="file" id="csvFile" accept=".csv" class="mb-4">
+<div class="bg-white p-6 rounded shadow max-w-5xl w-full">
 
-<div id="preview" class="overflow-auto mb-4"></div>
-<div id="mappingContainer" class="mb-4"></div>
+<h1 class="text-2xl font-bold mb-4">IP Disclosure CSV → DOCX Converter</h1>
 
-<button onclick="processFile()" class="bg-blue-500 text-white px-4 py-2 rounded">Generate DOCX</button>
-<div id="status" class="mt-3 text-sm text-gray-600"></div>
+<div class="text-sm mb-6">
+<h2 class="font-semibold">Instructions</h2>
+<ol class="list-decimal ml-5">
+<li>Upload CSV export</li>
+<li>Verify preview</li>
+<li>Adjust field mappings (auto-filled)</li>
+<li>Click Generate</li>
+</ol>
+<p class="mt-2 text-gray-600">
+All processing is local. No data is transmitted externally.
+</p>
 </div>
 
-<script>
-let parsedData = [];
-let headers = [];
-let fieldMap = {};
+<input type="file" id="csvFile" class="mb-4" />
 
-const TEMPLATE_FIELDS = [
-  "descriptive_title",
-  "corresponding_contributor",
-  "other_contributors",
-  "summary",
-  "unusual_features",
-  "differ_from_present",
-  "problems_solved",
-  "advantages",
-  "ip_types_selected"
-];
+<div id="preview" class="mb-4 overflow-auto"></div>
+<div id="mappingUI" class="mb-4"></div>
 
-document.getElementById('csvFile').addEventListener('change', handleFile);
+<button id="generateBtn" class="bg-blue-600 text-white px-4 py-2 rounded">Generate DOCX</button>
 
-function handleFile(e) {
-  const file = e.target.files[0];
+<div id="status" class="mt-3 text-sm"></div>
 
-  Papa.parse(file, {
-    header: true,
-    skipEmptyLines: true,
-    complete: function(results) {
-      parsedData = results.data;
-      headers = Object.keys(parsedData[0] || {});
+</div>
 
-      renderPreview();
-      renderMappingUI();
-    }
-  });
-}
+<script type="module" src="./js/app.js"></script>
 
-function renderPreview() {
-  const previewDiv = document.getElementById('preview');
-  let table = "<table class='table-auto border text-xs'><tr>";
-
-  headers.forEach(h => {
-    table += `<th class="border px-2">${h}</th>`;
-  });
-
-  table += "</tr>";
-
-  parsedData.slice(0, 3).forEach(row => {
-    table += "<tr>";
-    headers.forEach(h => {
-      table += `<td class="border px-2">${row[h] || ""}</td>`;
-    });
-    table += "</tr>";
-  });
-
-  table += "</table>";
-  previewDiv.innerHTML = table;
-}
-
-function renderMappingUI() {
-  const container = document.getElementById('mappingContainer');
-  let html = "<h3 class='font-semibold mb-2'>Field Mapping</h3>";
-
-  TEMPLATE_FIELDS.forEach(field => {
-    html += `
-      <div class="mb-2">
-        <label class="block text-sm">${field}</label>
-        <select data-field="${field}" class="w-full border p-1">
-          <option value="">-- Select Column --</option>
-          ${headers.map(h => `<option value="${h}">${h}</option>`).join("")}
-        </select>
-      </div>
-    `;
-  });
-
-  container.innerHTML = html;
-}
-
-function buildMapping() {
-  fieldMap = {};
-  document.querySelectorAll('select').forEach(select => {
-    fieldMap[select.dataset.field] = select.value;
-  });
-}
-
-function processFile() {
-  buildMapping();
-  document.getElementById("status").innerText = "Processing...";
-
-  fetch('./template.docx')
-    .then(res => res.arrayBuffer())
-    .then(templateContent => {
-      const zip = new JSZip();
-
-      parsedData.forEach((row, index) => {
-        const data = processRow(row);
-
-        try {
-          const blob = generateDoc(templateContent, data);
-          const name = (data.descriptive_title || `file_${index}`).replace(/[^a-z0-9]/gi, '_');
-          zip.file(name + '.docx', blob);
-        } catch (err) {
-          console.error(err);
-        }
-      });
-
-      zip.generateAsync({ type: 'blob' }).then(blob => {
-        saveAs(blob, 'outputs.zip');
-        document.getElementById("status").innerText = "Done!";
-      });
-    })
-    .catch(() => alert("Template not found"));
-}
-
-function processRow(row) {
-  const data = {};
-
-  Object.keys(fieldMap).forEach(key => {
-    const col = fieldMap[key];
-    data[key] = col ? (row[col] || '').trim() : '';
-  });
-
-  data.disclosures = extractRepeating(row, "Disclosure");
-  data.sponsors = extractRepeating(row, "Sponsor");
-
-  return data;
-}
-
-function extractRepeating(row, prefix) {
-  const results = [];
-  let i = 1;
-
-  while (row[`${prefix} ${i} Title`]) {
-    results.push({
-      title: row[`${prefix} ${i} Title`],
-      authors: row[`${prefix} ${i} Authors`]
-    });
-    i++;
-  }
-
-  return results;
-}
-
-function generateDoc(templateContent, data) {
-  const zip = new PizZip(templateContent);
-  const doc = new docxtemplater(zip, { paragraphLoop: true, linebreaks: true });
-
-  doc.render(data);
-
-  return doc.getZip().generate({
-    type: 'blob',
-    mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-  });
-}
-</script>
 </body>
 </html>
