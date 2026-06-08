@@ -39,15 +39,22 @@ export function autoMap(headers) {
   const mapping = {};
 
   TEMPLATE_FIELDS.forEach(field => {
-    const match = headers.find(h =>
-      normalize(h).includes(normalize(field))
-    );
+    const match = headers.find(h => {
+      const nh = normalize(h);
+      const nf = normalize(field);
+
+      return (
+        nh === nf ||             // exact match
+        nh.includes(nf) ||       // header contains field
+        nf.includes(nh)          // field contains header
+      );
+    });
+
     mapping[field] = match || "";
   });
 
   return mapping;
 }
-
 export function saveMapping(map) {
   localStorage.setItem("fieldMap", JSON.stringify(map));
 }
