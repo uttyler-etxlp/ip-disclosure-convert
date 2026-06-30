@@ -1,51 +1,27 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>IP Disclosure Converter</title>
+<html>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-<script src="https://unpkg.com/pizzip@3.1.5/dist/pizzip.js"></script>
-<script src="https://unpkg.com/docxtemplater@3.42.2/build/docxtemplater.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-<script src="https://cdn.tailwindcss.com"></script>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>UT Tyler IP Disclosure Converter V2</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="https://unpkg.com/pizzip@3.1.5/dist/pizzip.js"></script>
+    <script src="https://unpkg.com/docxtemplater@3.42.2/build/docxtemplater.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
-<body class="bg-gray-100 flex justify-center p-6">
-
-<div class="bg-white p-6 rounded shadow max-w-5xl w-full">
-
-<h1 class="text-2xl font-bold mb-4">IP Disclosure CSV → DOCX Converter</h1>
-
-<div class="text-sm mb-6">
-<h2 class="font-semibold">Instructions</h2>
-<ol class="list-decimal ml-5">
-<li>Upload CSV export</li>
-<li>Verify preview</li>
-<li>Adjust field mappings (auto-filled)</li>
-<li>Click Generate</li>
-</ol>
-<p class="mt-2 text-gray-600">
-All processing is local. No data is transmitted externally.
-</p>
-</div>
-
-<input type="file" id="csvFile" class="mb-4" />
-
-<div id="preview" class="mb-4 overflow-auto"></div>
-<div id="mappingUI" class="mb-4"></div>
-
-<button id="generateBtn" class="bg-blue-600 text-white px-4 py-2 rounded">Generate DOCX</button>
-
-<div id="status" class="mt-3 text-sm"></div>
-
-</div>
-
-<script type="module">
-  import './js/app.js';
-</script>
-
+<body class="bg-gray-100 p-6">
+    <div class="max-w-5xl mx-auto bg-white p-6 rounded shadow">
+        <h1 class="text-2xl font-bold">UT Tyler IP Disclosure Converter V2</h1>
+        <p>Upload Qualtrics CSV export. No mapping required.</p><input id="csvFile" type="file" accept=".csv"
+            class="mt-4"><button id="generateBtn" class="ml-2 bg-blue-600 text-white px-4 py-2 rounded">Generate
+            Documents</button>
+        <pre id="status" class="mt-4"></pre>
+    </div>
+    <script type="module" src="./js/app.js"></script>
 </body>
+
 </html>
