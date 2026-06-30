@@ -1,6 +1,1 @@
-Papa.parse(csv, {
-  header: false
-});
-
-const labels = rows[1];
-const dataRows = rows.slice(3);
+export function parseQualtrics(rows){const headers=rows[1]; return rows.slice(3).map(r=>Object.fromEntries(headers.map((h,i)=>[h,r[i]])));}
